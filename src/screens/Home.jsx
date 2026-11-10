@@ -17,6 +17,8 @@ export default function Home({ tx, ir, max, nome, setPeriodo }) {
   const ultimos = Array.from({ length: 12 }, (_, i) => { const d = new Date(ano, mes - 11 + i, 1); return resumoMes(tx, d.getFullYear(), d.getMonth()).receita })
   const maxU = Math.max(1, ...ultimos)
   const hojeIdx = (new Date().getDay() + 6) % 7
+  // Vagas: enquanto a agenda não existe, todo dia de hoje até domingo conta como livre.
+  const livres = DIAS.map((_, i) => i).filter((i) => i >= hojeIdx)
   const abrirFat = () => { setPeriodo({ ano, mes }); ir('relatorio') }
 
   const lbl = { fontSize: 11, letterSpacing: '.1em', color: MUT }
@@ -54,12 +56,12 @@ export default function Home({ tx, ir, max, nome, setPeriodo }) {
 
         <div onClick={() => ir('agenda')} style={{ ...card, cursor: 'pointer', padding: '18px 16px' }}>
           <div style={lbl}>VAGAS NA SEMANA</div>
-          <div style={big}>— <span style={{ fontSize: 13, color: MUT, fontWeight: 400 }}>livres</span></div>
+          <div style={big}>{livres.length} <span style={{ fontSize: 13, color: MUT, fontWeight: 400 }}>livres</span></div>
           <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
             {DIAS.map((d, i) => (
               <div key={d} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                <span style={{ width: '100%', height: 9, borderRadius: 4, background: 'rgba(255,255,255,.12)' }} />
-                <span style={{ fontSize: 10, color: i === hojeIdx ? W : '#8a8a90', fontWeight: i === hojeIdx ? 700 : 400 }}>{d}</span>
+                <span style={{ width: '100%', height: 9, borderRadius: 4, background: livres.includes(i) ? W : 'rgba(255,255,255,.12)', animation: livres.includes(i) ? `led 1.6s ease-in-out ${((i * 7) % 5) * 0.25}s infinite` : 'none' }} />
+                <span style={{ fontSize: 10, color: livres.includes(i) ? W : '#8a8a90', fontWeight: livres.includes(i) ? 700 : 400 }}>{d}</span>
               </div>
             ))}
           </div>
