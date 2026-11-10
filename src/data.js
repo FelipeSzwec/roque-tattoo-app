@@ -8,7 +8,7 @@ const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const supabase = URL && KEY ? createClient(URL, KEY) : null
 export const modoDemo = !supabase
 
-const CAMPOS = 'id, data, tipo, valor, categoria, grupo, forma_pagamento, descricao, exemplo, conta_id, created_at'
+const CAMPOS = 'id, data, tipo, valor, categoria, grupo, forma_pagamento, descricao, exemplo, conta_id, sessao_id, created_at'
 const LS_TX = 'roque-lancamentos-v1'
 const LS_SESSAO = 'roque-sessao-v1'
 const LS_CONTAS = 'roque-contas-v1'
@@ -168,3 +168,84 @@ export async function salvarConfig(cfg) {
   }
   lsSet(LS_CONFIG, campos)
 }
+
+// ---------- Agenda ----------
+const LS_SESSOES = 'roque-sessoes-v1'
+const LS_AGENDA = 'roque-config-agenda-v1'
+const CAMPOS_SESSAO = 'id, cliente, telefone, inicio, fim, descricao, valor, sinal, status, obs, status_em, created_at'
+export const AGENDA_PADRAO = { hora_inicio: 10, hora_fim: 19, dias_trabalho: [1, 2, 3, 4, 5, 6], limpeza_min: 45, calendario_externo_url: '', ics_token: null }
+
+export async function listarSessoes() {
+  if (supabase) {
+    const desde = new Date(Date.now() - 400 * 864e5).toISOString()
+    const { data, error } = await supabase.from('sessoes').select(CAMPOS_SESSAO).gte('inicio', desde).order('inicio').limit(3000)
+    if (error) throw error
+    return data.map((s) => ({ ...s, valor: Number(s.valor || 0), sinal: Number(s.sinal || 0) }))
+  }
+  return lsGet(LS_SESSOES, []).sort((a, b) => a.inicio.localeCompare(b.inicio))
+}
+
+// Cria ou atualiza; devolve o id.
+export async function salvarSessao(s) {
+  const campos = { cliente: s.cliente, telefone: s.telefone || null, inicio: s.inicio, fim: s.fim, descricao: s.descricao || null, valor: s.valor || 0, sinal: s.sinal || 0, status: s.status || 'agendada', obs: s.obs || null, ...(s.status_em ? { status_em: s.status_em } : {}) }
+  if (supabase) {
+    if (s.id) {
+      const { error } = await supabase.from('sessoes').update({ ...campos, updated_at: new Date().toISOString() }).eq('id', s.id)
+      if (error) throw error
+      return s.id
+    }
+    const { data, error } = await supabase.from('sessoes').insert(campos).select('id').single()
+    if (error) throw error
+    return data.id
+  }
+  const lista = lsGet(LS_SESSOES, [])
+  const id = s.id || novoId()
+  const antes = lista.find((x) => x.id === id)
+  lsSet(LS_SESSOES, [...lista.filter((x) => x.id !== id), { created_at: antes?.created_at || new Date().toISOString(), ...antes, ...campos, id }])
+  return id
+}
+
+export async function excluirSessao(id) {
+  if (supabase) { const { error } = await supabase.from('sessoes').delete().eq('id', id); if (error) throw error; return }
+  lsSet(LS_SESSOES, lsGet(LS_SESSOES, []).filter((s) => s.id !== id))
+}
+
+export async function lerConfigAgenda() {
+  if (supabase) {
+    const { data, error } = await supabase.from('config_agenda').select('ics_token, calendario_externo_url, hora_inicio, hora_fim, dias_trabalho, limpeza_min').maybeSingle()
+    if (error) throw error
+    if (data) return { ...AGENDA_PADRAO, ...data, calendario_externo_url: data.calendario_externo_url || '' }
+    // primeira vez: cria a configuração (gera o link secreto do calendário)
+    const { data: u } = await supabase.auth.getUser()
+    const { data: novo, error: e2 } = await supabase.from('config_agenda').insert({ user_id: u.user.id }).select('ics_token, calendario_externo_url, hora_inicio, hora_fim, dias_trabalho, limpeza_min').single()
+    if (e2) throw e2
+    return { ...AGENDA_PADRAO, ...novo, calendario_externo_url: novo.calendario_externo_url || '' }
+  }
+  return { ...AGENDA_PADRAO, ...lsGet(LS_AGENDA, {}) }
+}
+
+export async function salvarConfigAgenda(c) {
+  const campos = { calendario_externo_url: (c.calendario_externo_url || '').trim() || null, hora_inicio: c.hora_inicio, hora_fim: c.hora_fim, dias_trabalho: c.dias_trabalho, limpeza_min: c.limpeza_min }
+  if (supabase) {
+    const { data: u } = await supabase.auth.getUser()
+    const { error } = await supabase.from('config_agenda').upsert({ user_id: u.user.id, ...campos, updated_at: new Date().toISOString() })
+    if (error) throw error
+    return
+  }
+  lsSet(LS_AGENDA, { ...campos, calendario_externo_url: campos.calendario_externo_url || '' })
+}
+
+// Compromissos do calendário do iPhone (via link público do iCloud).
+export async function buscarAgendaExterna() {
+  if (!supabase) return { eventos: [], configurado: false }
+  const { data, error } = await supabase.functions.invoke('agenda-externa', { method: 'POST', body: {} })
+  if (error) {
+    let msg = 'Não consegui ler o calendário do iPhone.'
+    try { const b = await error.context.json(); if (b?.erro) msg = b.erro } catch { /* sem detalhe */ }
+    throw new Error(msg)
+  }
+  return data
+}
+
+// Link para assinar no Calendário do iPhone.
+export const linkCalendario = (token) => token && URL ? URL.replace(/^https?:\/\//, 'webcal://') + '/functions/v1/agenda-ics?t=' + token : ''

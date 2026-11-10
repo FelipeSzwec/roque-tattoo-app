@@ -12,6 +12,7 @@ import Relatorio from './screens/Relatorio.jsx'
 import Custos from './screens/Custos.jsx'
 import Contas from './screens/Contas.jsx'
 import Onboarding from './screens/Onboarding.jsx'
+import Agenda from './screens/Agenda.jsx'
 
 const TABS = [['Início', 'home', '⌂'], ['Agenda', 'agenda', '▦'], ['Pedidos', 'pedidos', '≣'], ['Clientes', 'clientes', '◉'], ['Financeiro', 'gestao', '$']]
 const TAB_DE = { home: 'home', agenda: 'agenda', pedidos: 'pedidos', clientes: 'clientes' }
@@ -28,6 +29,11 @@ export default function App() {
   const [contas, setContas] = useState([])
   const [cfg, setCfg] = useState(null)
   const [pulouGuia, setPulouGuia] = useState(false)
+  const [sessoes, setSessoes] = useState([])
+  const [ag, setAg] = useState(db.AGENDA_PADRAO)
+  const [externos, setExternos] = useState([])
+  const [externoErro, setExternoErro] = useState(null)
+  const [navN, setNavN] = useState(0)
 
   useEffect(() => {
     db.sessaoAtual().then(setSessao)
@@ -37,13 +43,22 @@ export default function App() {
   const recarregar = useCallback(async () => {
     setCarregando(true)
     try {
-      const [t, c, f] = await Promise.all([db.listarLancamentos(), db.listarContas(), db.lerConfig()])
-      setTx(t); setContas(c); setCfg(f)
+      const [t, c, f, s, a] = await Promise.all([db.listarLancamentos(), db.listarContas(), db.lerConfig(), db.listarSessoes(), db.lerConfigAgenda()])
+      setTx(t); setContas(c); setCfg(f); setSessoes(s); setAg(a)
     } catch (e) { setToast({ msg: 'Não consegui carregar seus dados: ' + e.message, erro: true }) }
     setCarregando(false)
   }, [])
 
   useEffect(() => { if (sessao) recarregar() }, [sessao, recarregar])
+  // compromissos do iPhone: busca quando o link muda e a cada 10 minutos com o app aberto
+  useEffect(() => {
+    if (!sessao || !ag.calendario_externo_url) { setExternos([]); setExternoErro(null); return }
+    let vivo = true
+    const buscar = () => db.buscarAgendaExterna().then((r) => { if (vivo) { setExternos(r.eventos || []); setExternoErro(null) } }).catch((e) => vivo && setExternoErro(e.message))
+    buscar()
+    const t = setInterval(buscar, 10 * 60000)
+    return () => { vivo = false; clearInterval(t) }
+  }, [sessao, ag.calendario_externo_url])
   useEffect(() => { if (toast && !toast.erro) { const t = setTimeout(() => setToast(null), 3500); return () => clearTimeout(t) } }, [toast])
 
   const ir = (t, extra = {}) => { setToast(extra.toast || null); if ('editando' in extra) setEditando(extra.editando); setTela(t); document.getElementById('scroller')?.scrollTo(0, 0) }
@@ -53,7 +68,7 @@ export default function App() {
 
   const nome = sessao.user?.user_metadata?.nome || (sessao.user?.email || '').split('@')[0]
   const max = { ano: hoje.getFullYear(), mes: hoje.getMonth() }
-  const p = { tx, contas, cfg, ir, periodo, setPeriodo, max, toast, setToast, recarregar, carregando, nome }
+  const p = { tx, contas, cfg, ir, periodo, setPeriodo, max, toast, setToast, recarregar, carregando, nome, sessoes, ag, externos, externoErro }
   const guia = tela === 'onboarding' || (cfg && !cfg.onboarding_ok && !pulouGuia && tela === 'home')
   if (guia && cfg) return (
     <Fundo>
@@ -69,7 +84,7 @@ export default function App() {
   let conteudo
   switch (tela) {
     case 'home': conteudo = <Home {...p} />; break
-    case 'gestao': conteudo = <Gestao {...p} onSair={async () => { await db.sair(); setSessao(null); setTx([]) }} />; break
+    case 'gestao': conteudo = <Gestao {...p} onSair={async () => { await db.sair(); setSessao(null); setTx([]); setSessoes([]) }} />; break
     case 'lancar': conteudo = <Lancar {...p} editando={editando} />; break
     case 'caixa': conteudo = <Caixa {...p} />; break
     case 'onde': conteudo = <Onde {...p} />; break
@@ -77,6 +92,7 @@ export default function App() {
     case 'relatorio': conteudo = <Relatorio {...p} />; break
     case 'custos': conteudo = <Custos {...p} />; break
     case 'contas': conteudo = <Contas {...p} />; break
+    case 'agenda': conteudo = <Agenda key={(editando?.agendaKey || 'agenda') + navN} {...p} diaAgenda={editando?.diaAgenda} />; break
     default: conteudo = <Stub titulo={TABS.find((t) => t[1] === tela)?.[0] || 'Em breve'} />
   }
 
@@ -92,7 +108,7 @@ export default function App() {
         {TABS.map(([label, k, ic]) => {
           const on = tabAtiva === k
           return (
-            <button key={k} onClick={() => ir(k)} style={{ flex: 1, minHeight: 48, border: 0, background: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, color: on ? W : '#8a8a90', position: 'relative' }}>
+            <button key={k} onClick={() => { setNavN((n) => n + 1); ir(k, { editando: null }) }} style={{ flex: 1, minHeight: 48, border: 0, background: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, color: on ? W : '#8a8a90', position: 'relative' }}>
               <span style={{ fontSize: 17, lineHeight: 1 }}>{ic}</span><span style={{ fontSize: 10 }}>{label}</span>
               <span style={{ position: 'absolute', bottom: 1, width: 18, height: 2, borderRadius: 1, background: on ? W : 'transparent', boxShadow: on ? '0 0 8px rgba(255,255,255,.7)' : 'none' }} />
             </button>

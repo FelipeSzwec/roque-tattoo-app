@@ -69,3 +69,45 @@ create policy "config: alterar a sua" on public.config_financeira for update to 
 alter table public.lancamentos add column if not exists conta_id uuid references public.contas_fixas (id) on delete set null;
 alter table public.lancamentos drop constraint if exists lancamentos_forma_pagamento_check;
 alter table public.lancamentos add constraint lancamentos_forma_pagamento_check check (forma_pagamento in ('pix', 'dinheiro', 'cartao', 'credito', 'debito'));
+
+-- ---------- Agenda ----------
+create table if not exists public.sessoes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  cliente text not null,
+  telefone text,
+  inicio timestamptz not null,
+  fim timestamptz not null,
+  descricao text,
+  valor numeric(12,2) not null default 0,
+  sinal numeric(12,2) not null default 0,
+  status text not null default 'agendada' check (status in ('agendada','confirmada','realizada','cancelada','faltou')),
+  status_em timestamptz, -- quando foi concluída, cancelada ou marcada como falta
+  obs text,
+  created_at timestamptz not null default now(), -- quando o trabalho foi fechado
+  updated_at timestamptz not null default now(),
+  check (fim > inicio)
+);
+alter table public.sessoes enable row level security;
+create policy "sessoes_select" on public.sessoes for select to authenticated using ((select auth.uid()) = user_id);
+create policy "sessoes_insert" on public.sessoes for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "sessoes_update" on public.sessoes for update to authenticated using ((select auth.uid()) = user_id);
+create policy "sessoes_delete" on public.sessoes for delete to authenticated using ((select auth.uid()) = user_id);
+
+create table if not exists public.config_agenda (
+  user_id uuid primary key default auth.uid() references auth.users(id) on delete cascade,
+  ics_token uuid not null unique default gen_random_uuid(), -- link secreto do calendário para o iPhone
+  calendario_externo_url text, -- link público do calendário do iCloud
+  hora_inicio smallint not null default 10,
+  hora_fim smallint not null default 19,
+  dias_trabalho smallint[] not null default '{1,2,3,4,5,6}',
+  limpeza_min smallint not null default 45,
+  updated_at timestamptz not null default now()
+);
+alter table public.config_agenda enable row level security;
+create policy "config_agenda_select" on public.config_agenda for select to authenticated using ((select auth.uid()) = user_id);
+create policy "config_agenda_insert" on public.config_agenda for insert to authenticated with check ((select auth.uid()) = user_id);
+create policy "config_agenda_update" on public.config_agenda for update to authenticated using ((select auth.uid()) = user_id);
+
+alter table public.lancamentos add column if not exists sessao_id uuid references public.sessoes(id) on delete set null;
+-- Funções (supabase/functions): agenda-ics (calendário para assinar no iPhone) e agenda-externa (lê o calendário do iCloud).

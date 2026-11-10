@@ -1,12 +1,13 @@
 // Tela Início: mesmo layout do protótipo (Tattoo Studio App.dc.html, layout "grade").
-// Faturamento e sessões vêm dos lançamentos. Próxima sessão, Pix e vagas
-// passam a ter dados reais quando a agenda for construída (próximas partes).
+// Faturamento e sessões vêm dos lançamentos; próxima sessão, vagas e comparecimento vêm da agenda.
+// Pix e pedidos ganham dados reais nas próximas partes.
 import { resumoMes, brl, variacao, MESES } from '../finance.js'
 import { card, W, GR, OR, MUT } from '../ui.jsx'
+import { livresSemana, inicioSemana, proximaSessao, dataCurta, hhmm } from '../agenda.js'
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
-export default function Home({ tx, ir, max, nome, setPeriodo }) {
+export default function Home({ tx, ir, max, nome, setPeriodo, sessoes = [], externos = [], ag }) {
   const { ano, mes } = max
   const r = resumoMes(tx, ano, mes)
   const ant = mes === 0 ? resumoMes(tx, ano - 1, 11) : resumoMes(tx, ano, mes - 1)
@@ -17,8 +18,12 @@ export default function Home({ tx, ir, max, nome, setPeriodo }) {
   const ultimos = Array.from({ length: 12 }, (_, i) => { const d = new Date(ano, mes - 11 + i, 1); return resumoMes(tx, d.getFullYear(), d.getMonth()).receita })
   const maxU = Math.max(1, ...ultimos)
   const hojeIdx = (new Date().getDay() + 6) % 7
-  // Vagas: enquanto a agenda não existe, quinta e sábado ficam como exemplo de dias livres.
-  const livres = [3, 5].filter((i) => i >= hojeIdx)
+  // Vagas: dias desta semana (de hoje em diante) com pelo menos 2 horas livres na agenda.
+  const agora = new Date()
+  const livres = ag ? livresSemana(inicioSemana(agora), sessoes, externos, ag, agora) : []
+  const prox = proximaSessao(sessoes, agora)
+  const passadas = sessoes.filter((s) => { const d = new Date(s.inicio); return d.getFullYear() === ano && d.getMonth() === mes && new Date(s.fim) < agora && s.status !== 'cancelada' })
+  const comp = passadas.length ? Math.round((passadas.filter((s) => s.status === 'realizada').length / passadas.length) * 100) + '%' : '—'
   const abrirFat = () => { setPeriodo({ ano, mes }); ir('relatorio') }
 
   const lbl = { fontSize: 11, letterSpacing: '.1em', color: MUT }
@@ -37,11 +42,13 @@ export default function Home({ tx, ir, max, nome, setPeriodo }) {
       </div>
       <div style={{ height: 80, flex: 'none' }} />
 
-      <button onClick={() => ir('agenda')} style={{ ...card, display: 'flex', gap: 12, alignItems: 'center', textAlign: 'left', width: '100%', padding: '8px 12px', minHeight: 56, cursor: 'pointer' }}>
+      <button onClick={() => ir('agenda', { editando: prox ? { diaAgenda: prox.inicio, agendaKey: prox.id } : null })} style={{ ...card, display: 'flex', gap: 12, alignItems: 'center', textAlign: 'left', width: '100%', padding: '8px 12px', minHeight: 56, cursor: 'pointer' }}>
         <div style={{ width: 44, height: 44, borderRadius: 10, flex: 'none', background: 'repeating-linear-gradient(45deg,#232326,#232326 6px,#1a1a1d 6px,#1a1a1d 12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '8px monospace', color: '#6b6b70' }}>ref.</div>
         <div style={{ flex: 1 }}>
           <div style={lbl}>PRÓXIMA SESSÃO</div>
-          <div style={{ fontSize: 14, fontWeight: 600 }}>Nenhuma sessão agendada <span style={{ fontSize: 12, fontWeight: 400, color: MUT }}>· agenda em breve</span></div>
+          {prox
+            ? <div style={{ fontSize: 14, fontWeight: 600 }}>{prox.cliente} <span style={{ fontSize: 12, fontWeight: 400, color: MUT }}>· {dataCurta(new Date(prox.inicio))} · {hhmm(new Date(prox.inicio))}{prox.descricao ? ' · ' + prox.descricao : ''}</span></div>
+            : <div style={{ fontSize: 14, fontWeight: 600 }}>Nenhuma sessão agendada <span style={{ fontSize: 12, fontWeight: 400, color: MUT }}>· toque para marcar</span></div>}
         </div>
         <span style={{ color: MUT }}>›</span>
       </button>
@@ -77,7 +84,7 @@ export default function Home({ tx, ir, max, nome, setPeriodo }) {
         </div>
 
         <div style={{ ...card, padding: '18px 16px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
-          {[['Sessões', String(r.sessoes)], ['Comparecimento', '—'], ['Pedidos novos', '0']].map(([l, v]) => (
+          {[['Sessões', String(r.sessoes)], ['Comparecimento', comp], ['Pedidos novos', '0']].map(([l, v]) => (
             <div key={l} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', fontSize: 13, color: MUT }}><span>{l}</span><b style={{ fontSize: 17, color: W, fontWeight: 500 }}>{v}</b></div>
           ))}
         </div>
