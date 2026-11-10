@@ -10,9 +10,11 @@ export const CATEGORIAS = {
   ],
   saida: [
     ['Aluguel', 'fixo'],
+    ['Condomínio', 'fixo'],
     ['Energia', 'fixo'],
     ['Água', 'fixo'],
     ['Internet', 'fixo'],
+    ['Telefone', 'fixo'],
     ['Contador', 'fixo'],
     ['Apps e assinaturas', 'fixo'],
     ['Materiais e tintas', 'variavel'],
@@ -34,8 +36,8 @@ export const GRUPO_LABEL = {
   pessoal: 'Pessoal',
 }
 
-export const FORMAS = [['pix', 'Pix'], ['dinheiro', 'Dinheiro'], ['cartao', 'Cartão']]
-export const FORMA_LABEL = Object.fromEntries(FORMAS)
+export const FORMAS = [['pix', 'Pix'], ['dinheiro', 'Dinheiro'], ['credito', 'Crédito'], ['debito', 'Débito']]
+export const FORMA_LABEL = { ...Object.fromEntries(FORMAS), cartao: 'Cartão' }
 
 export function grupoDe(tipo, categoria) {
   const found = (CATEGORIAS[tipo] || []).find(([c]) => c === categoria)
@@ -46,7 +48,7 @@ export function grupoDe(tipo, categoria) {
 export const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 export const MESES_LONGOS = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro']
 
-export const brl = (v) => 'R$ ' + Math.round(v || 0).toLocaleString('pt-BR')
+export const brl = (v) => { const n = Math.round(v || 0); return (n < 0 ? '− ' : '') + 'R$ ' + Math.abs(n).toLocaleString('pt-BR') }
 export const brl2 = (v) => 'R$ ' + (v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 
 export function variacao(atual, anterior) {
@@ -150,4 +152,27 @@ export function gerarExemplos(hoje = new Date()) {
     if (m % 3 === 2) add(m, 22, 'saida', 380 + m * 25, 'Gasto pessoal', 'cartao', 'Mercado pago com o cartão do estúdio')
   }
   return out
+}
+
+// Contas do mês: cada conta fixa ativa aparece como "a pagar" até virar lançamento.
+// O DAS (quando há % de imposto) é calculado sobre o faturamento do mês anterior.
+export function contasDoMes(contas, cfg, tx, ano, mes) {
+  const doMes = noMes(tx, ano, mes)
+  const lista = contas.filter((c) => c.ativa !== false).map((c) => {
+    const pago = doMes.find((t) => t.conta_id === c.id)
+    return { ...c, pago, valorPrevisto: c.valor }
+  })
+  if (cfg && cfg.imposto_pct > 0) {
+    const d = new Date(ano, mes - 1, 1)
+    const fatAnt = resumoMes(tx, d.getFullYear(), d.getMonth()).receita
+    const pago = doMes.find((t) => t.categoria === 'Impostos (DAS)')
+    lista.push({ id: 'das', nome: 'Impostos (DAS)', categoria: 'Impostos (DAS)', grupo: 'imposto', dia: 20, valor: Math.round(fatAnt * cfg.imposto_pct) / 100, virtual: true, pago, nota: cfg.imposto_pct + '% de ' + brl(fatAnt) + ' faturados em ' + MESES_LONGOS[d.getMonth()] })
+  }
+  return lista.sort((a, b) => (!!a.pago - !!b.pago) || a.dia - b.dia)
+}
+
+export function taxaCartao(cfg, forma, valor) {
+  if (!cfg) return 0
+  const pct = forma === 'credito' ? cfg.taxa_credito : forma === 'debito' ? cfg.taxa_debito : 0
+  return pct > 0 ? Math.round(valor * pct) / 100 : 0
 }

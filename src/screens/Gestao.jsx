@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import * as db from '../data.js'
-import { resumoMes, brl, gerarExemplos, MESES_LONGOS } from '../finance.js'
+import { resumoMes, brl, gerarExemplos, contasDoMes, MESES_LONGOS } from '../finance.js'
 import { Screen, Title, Note, Toast, card, btnPrimary, btnGhost, W, GR, OR, MUT } from '../ui.jsx'
 
-export function Gestao({ tx, ir, max, setPeriodo, toast, setToast, recarregar, onSair }) {
+export function Gestao({ tx, contas, cfg, ir, max, setPeriodo, toast, setToast, recarregar, onSair }) {
   const [ocupado, setOcupado] = useState(false)
   const r = resumoMes(tx, max.ano, max.mes)
   const temExemplos = tx.some((t) => t.exemplo)
   const abrir = (t) => { setPeriodo({ ...max }); ir(t) }
+  const doMes = contasDoMes(contas, cfg, tx, max.ano, max.mes)
+  const abertas = doMes.filter((c) => !c.pago)
   const itens = [
+    ['▤', 'Contas do mês', abertas.length ? abertas.length + (abertas.length === 1 ? ' conta a pagar' : ' contas a pagar') : doMes.length ? 'Tudo pago ✓' : 'Cadastre suas contas fixas', abertas.length ? brl(abertas.reduce((a, c) => a + c.valor, 0)) : '', abertas.length ? OR : GR, 'contas'],
     ['◆', 'Lucro real', 'O negócio está dando lucro?', brl(r.lucro), r.lucro >= 0 ? GR : OR, 'lucro'],
     ['◐', 'Para onde vai o dinheiro', 'Cada gasto, quanto pesa', brl(r.saidas), W, 'onde'],
     ['⇅', 'Entrou × saiu', 'Fluxo de caixa e lançamentos', brl(r.saldo), r.saldo >= 0 ? W : OR, 'caixa'],
@@ -41,6 +44,7 @@ export function Gestao({ tx, ir, max, setPeriodo, toast, setToast, recarregar, o
       ))}
       {tx.length === 0 && <Note>Ainda não há lançamentos. Lance o primeiro, ou carregue dados de exemplo para ver como os relatórios funcionam.</Note>}
       <button onClick={exemplos} disabled={ocupado} style={btnGhost}>{ocupado ? 'Aguarde…' : temExemplos ? 'Apagar dados de exemplo' : 'Carregar dados de exemplo'}</button>
+      <button onClick={() => ir('onboarding')} style={{ minHeight: 44, border: 0, background: 'none', color: MUT, fontSize: 13, cursor: 'pointer' }}>Configurar financeiro (aluguel, maquininha, imposto…)</button>
       <button onClick={onSair} style={{ minHeight: 44, border: 0, background: 'none', color: MUT, fontSize: 13, cursor: 'pointer' }}>Sair da conta</button>
     </Screen>
   )

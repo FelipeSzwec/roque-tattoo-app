@@ -8,9 +8,11 @@ const KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const supabase = URL && KEY ? createClient(URL, KEY) : null
 export const modoDemo = !supabase
 
-const CAMPOS = 'id, data, tipo, valor, categoria, grupo, forma_pagamento, descricao, exemplo, created_at'
+const CAMPOS = 'id, data, tipo, valor, categoria, grupo, forma_pagamento, descricao, exemplo, conta_id, created_at'
 const LS_TX = 'roque-lancamentos-v1'
 const LS_SESSAO = 'roque-sessao-v1'
+const LS_CONTAS = 'roque-contas-v1'
+const LS_CONFIG = 'roque-config-v1'
 
 const lsGet = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def } catch { return def } }
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* sem armazenamento */ } }
@@ -113,4 +115,56 @@ export async function excluirExemplos() {
     return
   }
   lsSet(LS_TX, lsGet(LS_TX, []).filter((t) => !t.exemplo))
+}
+
+// ---------- Contas fixas (repetem todo mês) ----------
+export async function listarContas() {
+  if (supabase) {
+    const { data, error } = await supabase.from('contas_fixas').select('id, nome, categoria, grupo, valor, dia, ativa').order('dia')
+    if (error) throw error
+    return data.map((c) => ({ ...c, valor: Number(c.valor) }))
+  }
+  return lsGet(LS_CONTAS, [])
+}
+
+export async function salvarContas(lista) {
+  // lista de contas novas ({nome, categoria, grupo, valor, dia}) ou existentes (com id)
+  if (supabase) {
+    const novas = lista.filter((c) => !c.id), velhas = lista.filter((c) => c.id)
+    if (novas.length) { const { error } = await supabase.from('contas_fixas').insert(novas); if (error) throw error }
+    for (const c of velhas) { const { id, ...campos } = c; const { error } = await supabase.from('contas_fixas').update(campos).eq('id', id); if (error) throw error }
+    return
+  }
+  const atual = lsGet(LS_CONTAS, [])
+  const mapa = new Map(atual.map((c) => [c.id, c]))
+  for (const c of lista) { const id = c.id || novoId(); mapa.set(id, { ativa: true, ...mapa.get(id), ...c, id }) }
+  lsSet(LS_CONTAS, [...mapa.values()])
+}
+
+export async function excluirConta(id) {
+  if (supabase) { const { error } = await supabase.from('contas_fixas').delete().eq('id', id); if (error) throw error; return }
+  lsSet(LS_CONTAS, lsGet(LS_CONTAS, []).filter((c) => c.id !== id))
+}
+
+// ---------- Configurações do financeiro ----------
+const CONFIG_PADRAO = { taxa_credito: 0, taxa_debito: 0, imposto_pct: 0, onboarding_ok: false }
+
+export async function lerConfig() {
+  if (supabase) {
+    const { data, error } = await supabase.from('config_financeira').select('taxa_credito, taxa_debito, imposto_pct, onboarding_ok').maybeSingle()
+    if (error) throw error
+    return data ? { taxa_credito: Number(data.taxa_credito), taxa_debito: Number(data.taxa_debito), imposto_pct: Number(data.imposto_pct), onboarding_ok: data.onboarding_ok } : { ...CONFIG_PADRAO }
+  }
+  return { ...CONFIG_PADRAO, ...lsGet(LS_CONFIG, {}) }
+}
+
+export async function salvarConfig(cfg) {
+  const campos = { taxa_credito: cfg.taxa_credito, taxa_debito: cfg.taxa_debito, imposto_pct: cfg.imposto_pct, onboarding_ok: cfg.onboarding_ok }
+  if (supabase) {
+    const { data: u } = await supabase.auth.getUser()
+    const { error } = await supabase.from('config_financeira').upsert({ user_id: u.user.id, ...campos, updated_at: new Date().toISOString() })
+    if (error) throw error
+    return
+  }
+  lsSet(LS_CONFIG, campos)
 }

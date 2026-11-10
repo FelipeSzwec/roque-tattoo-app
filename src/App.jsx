@@ -10,6 +10,8 @@ import Onde from './screens/Onde.jsx'
 import Lucro from './screens/Lucro.jsx'
 import Relatorio from './screens/Relatorio.jsx'
 import Custos from './screens/Custos.jsx'
+import Contas from './screens/Contas.jsx'
+import Onboarding from './screens/Onboarding.jsx'
 
 const TABS = [['Início', 'home', '⌂'], ['Agenda', 'agenda', '▦'], ['Pedidos', 'pedidos', '≣'], ['Clientes', 'clientes', '◉'], ['Mais', 'gestao', '⋯']]
 const TAB_DE = { home: 'home', agenda: 'agenda', pedidos: 'pedidos', clientes: 'clientes' }
@@ -23,6 +25,9 @@ export default function App() {
   const [periodo, setPeriodo] = useState({ ano: hoje.getFullYear(), mes: hoje.getMonth() })
   const [toast, setToast] = useState(null)
   const [editando, setEditando] = useState(null)
+  const [contas, setContas] = useState([])
+  const [cfg, setCfg] = useState(null)
+  const [pulouGuia, setPulouGuia] = useState(false)
 
   useEffect(() => {
     db.sessaoAtual().then(setSessao)
@@ -31,7 +36,10 @@ export default function App() {
 
   const recarregar = useCallback(async () => {
     setCarregando(true)
-    try { setTx(await db.listarLancamentos()) } catch (e) { setToast({ msg: 'Não consegui carregar os lançamentos: ' + e.message, erro: true }) }
+    try {
+      const [t, c, f] = await Promise.all([db.listarLancamentos(), db.listarContas(), db.lerConfig()])
+      setTx(t); setContas(c); setCfg(f)
+    } catch (e) { setToast({ msg: 'Não consegui carregar seus dados: ' + e.message, erro: true }) }
     setCarregando(false)
   }, [])
 
@@ -45,7 +53,17 @@ export default function App() {
 
   const nome = sessao.user?.user_metadata?.nome || (sessao.user?.email || '').split('@')[0]
   const max = { ano: hoje.getFullYear(), mes: hoje.getMonth() }
-  const p = { tx, ir, periodo, setPeriodo, max, toast, setToast, recarregar, carregando, nome }
+  const p = { tx, contas, cfg, ir, periodo, setPeriodo, max, toast, setToast, recarregar, carregando, nome }
+  const guia = tela === 'onboarding' || (cfg && !cfg.onboarding_ok && !pulouGuia && tela === 'home')
+  if (guia && cfg) return (
+    <Fundo>
+      <div id="scroller" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', textShadow: '0 1px 4px rgba(0,0,0,.9)' }}>
+        <div style={{ maxWidth: 520, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', flex: '1 0 auto' }}>
+          <Onboarding cfg={cfg} contasAtuais={contas} onPular={() => { setPulouGuia(true); ir('home') }} onFim={async () => { await recarregar(); setPulouGuia(true); ir('contas', { toast: { msg: 'Financeiro montado! Estas são as suas contas do mês.' } }) }} />
+        </div>
+      </div>
+    </Fundo>
+  )
   const tabAtiva = TAB_DE[tela] || 'gestao'
 
   let conteudo
@@ -58,6 +76,7 @@ export default function App() {
     case 'lucro': conteudo = <Lucro {...p} />; break
     case 'relatorio': conteudo = <Relatorio {...p} />; break
     case 'custos': conteudo = <Custos {...p} />; break
+    case 'contas': conteudo = <Contas {...p} />; break
     default: conteudo = <Stub titulo={TABS.find((t) => t[1] === tela)?.[0] || 'Em breve'} />
   }
 
