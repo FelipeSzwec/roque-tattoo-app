@@ -173,7 +173,7 @@ export async function salvarConfig(cfg) {
 const LS_SESSOES = 'roque-sessoes-v1'
 const LS_AGENDA = 'roque-config-agenda-v1'
 const CAMPOS_SESSAO = 'id, cliente, telefone, inicio, fim, descricao, valor, sinal, status, obs, status_em, created_at'
-export const AGENDA_PADRAO = { hora_inicio: 10, hora_fim: 19, dias_trabalho: [1, 2, 3, 4, 5, 6], limpeza_min: 45, calendario_externo_url: '', ics_token: null }
+export const AGENDA_PADRAO = { hora_inicio: 10, hora_fim: 19, dias_trabalho: [1, 2, 3, 4, 5, 6], limpeza_min: 45, calendario_externo_url: '', ics_token: null, playlist_url: '' }
 
 export async function listarSessoes() {
   if (supabase) {
@@ -212,12 +212,12 @@ export async function excluirSessao(id) {
 
 export async function lerConfigAgenda() {
   if (supabase) {
-    const { data, error } = await supabase.from('config_agenda').select('ics_token, calendario_externo_url, hora_inicio, hora_fim, dias_trabalho, limpeza_min').maybeSingle()
+    const { data, error } = await supabase.from('config_agenda').select('ics_token, calendario_externo_url, hora_inicio, hora_fim, dias_trabalho, limpeza_min, playlist_url').maybeSingle()
     if (error) throw error
     if (data) return { ...AGENDA_PADRAO, ...data, calendario_externo_url: data.calendario_externo_url || '' }
     // primeira vez: cria a configuração (gera o link secreto do calendário)
     const { data: u } = await supabase.auth.getUser()
-    const { data: novo, error: e2 } = await supabase.from('config_agenda').insert({ user_id: u.user.id }).select('ics_token, calendario_externo_url, hora_inicio, hora_fim, dias_trabalho, limpeza_min').single()
+    const { data: novo, error: e2 } = await supabase.from('config_agenda').insert({ user_id: u.user.id }).select('ics_token, calendario_externo_url, hora_inicio, hora_fim, dias_trabalho, limpeza_min, playlist_url').single()
     if (e2) throw e2
     return { ...AGENDA_PADRAO, ...novo, calendario_externo_url: novo.calendario_externo_url || '' }
   }
@@ -232,7 +232,7 @@ export async function salvarConfigAgenda(c) {
     if (error) throw error
     return
   }
-  lsSet(LS_AGENDA, { ...campos, calendario_externo_url: campos.calendario_externo_url || '' })
+  lsSet(LS_AGENDA, { ...lsGet(LS_AGENDA, {}), ...campos, calendario_externo_url: campos.calendario_externo_url || '' })
 }
 
 // Compromissos do calendário do iPhone (via link público do iCloud).
@@ -249,3 +249,15 @@ export async function buscarAgendaExterna() {
 
 // Link para assinar no Calendário do iPhone.
 export const linkCalendario = (token) => token && URL ? URL.replace(/^https?:\/\//, 'webcal://') + '/functions/v1/agenda-ics?t=' + token : ''
+
+// Playlist do estúdio (Spotify)
+export async function salvarPlaylist(url) {
+  const v = (url || '').trim() || null
+  if (supabase) {
+    const { data: u } = await supabase.auth.getUser()
+    const { error } = await supabase.from('config_agenda').upsert({ user_id: u.user.id, playlist_url: v, updated_at: new Date().toISOString() })
+    if (error) throw error
+    return
+  }
+  lsSet(LS_AGENDA, { ...lsGet(LS_AGENDA, {}), playlist_url: v || '' })
+}
