@@ -16,7 +16,8 @@ if (import.meta.env.PROD) {
     try {
       const html = await (await fetch(import.meta.env.BASE_URL + '?v=' + Date.now(), { cache: 'no-store' })).text()
       const nova = (html.match(/assets\/index-[^"']+\.js/) || [])[0]
-      if (nova && atual && !atual.endsWith(nova)) location.reload()
+      // recarrega uma vez só por versão, para nunca entrar em ciclo se o celular insistir na versão guardada
+      if (nova && atual && !atual.endsWith(nova) && sessionStorage.getItem('roque-recarregou') !== nova) { sessionStorage.setItem('roque-recarregou', nova); location.reload() }
     } catch { /* sem internet */ }
   }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') verificar() })
