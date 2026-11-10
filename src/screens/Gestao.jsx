@@ -45,6 +45,7 @@ export function Gestao({ tx, contas, cfg, ir, max, setPeriodo, toast, setToast, 
       {tx.length === 0 && <Note>Ainda não há lançamentos. Lance o primeiro, ou carregue dados de exemplo para ver como os relatórios funcionam.</Note>}
       <button onClick={exemplos} disabled={ocupado} style={btnGhost}>{ocupado ? 'Aguarde…' : temExemplos ? 'Apagar dados de exemplo' : 'Carregar dados de exemplo'}</button>
       <button onClick={() => ir('onboarding')} style={{ minHeight: 44, border: 0, background: 'none', color: MUT, fontSize: 13, cursor: 'pointer' }}>Configurar financeiro (aluguel, maquininha, imposto…)</button>
+      <button onClick={() => ir('musica')} style={{ minHeight: 44, border: 0, background: 'none', color: MUT, fontSize: 13, cursor: 'pointer' }}>Playlist do estúdio (Spotify)</button>
       <button onClick={onSair} style={{ minHeight: 44, border: 0, background: 'none', color: MUT, fontSize: 13, cursor: 'pointer' }}>Sair da conta</button>
     </Screen>
   )

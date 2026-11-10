@@ -16,7 +16,7 @@ import Agenda from './screens/Agenda.jsx'
 import Musica from './screens/Musica.jsx'
 
 const TABS = [['Início', 'home', '⌂'], ['Agenda', 'agenda', '▦'], ['Pedidos', 'pedidos', '≣'], ['Clientes', 'clientes', '◉'], ['Financeiro', 'gestao', '$']]
-const TAB_DE = { home: 'home', musica: 'home', agenda: 'agenda', pedidos: 'pedidos', clientes: 'clientes' }
+const TAB_DE = { home: 'home',  agenda: 'agenda', pedidos: 'pedidos', clientes: 'clientes' }
 
 export default function App() {
   const hoje = new Date()

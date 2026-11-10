@@ -13,14 +13,23 @@ export function lerSpotify(url) {
   return m ? { tipo: m[1], id: m[2] } : null
 }
 
+// Abre direto no app do Spotify (toca a música inteira com Premium). Se o app não abrir, cai no site.
+export function abrirNoSpotify(url) {
+  const a = lerSpotify(url) || lerSpotify(PLAYLIST_EXEMPLO)
+  const web = `https://open.spotify.com/${a.tipo}/${a.id}`
+  let saiu = false
+  const marcar = () => { if (document.visibilityState === 'hidden') saiu = true }
+  document.addEventListener('visibilitychange', marcar)
+  window.location.href = `spotify:${a.tipo}:${a.id}`
+  setTimeout(() => { document.removeEventListener('visibilitychange', marcar); if (!saiu) window.open(web, '_blank') }, 1500)
+}
+
 export default function Musica({ ag, recarregar, ir }) {
   const salvo = ag.playlist_url || ''
   const [url, setUrl] = useState(salvo)
-  const [editar, setEditar] = useState(false)
+  const [editar, setEditar] = useState(true)
   const [toast, setToast] = useState(null)
-  const atual = lerSpotify(salvo) || lerSpotify(PLAYLIST_EXEMPLO)
   const valido = !url.trim() || lerSpotify(url)
-  const abrir = `https://open.spotify.com/${atual.tipo}/${atual.id}`
 
   const salvar = async () => {
     if (!valido) return
@@ -29,16 +38,12 @@ export default function Musica({ ag, recarregar, ir }) {
 
   return (
     <Screen>
-      <Back onClick={() => ir('home')} label="Início" />
-      <Title a="Trilha do" b="estúdio" />
+      <Back onClick={() => ir('gestao')} label="Financeiro" />
+      <Title a="Playlist do" b="estúdio" />
       <Toast {...(toast || {})} />
       
-      <div style={{ ...card, padding: 8, overflow: 'hidden' }}>
-        <iframe key={atual.id} title="Spotify" src={`https://open.spotify.com/embed/${atual.tipo}/${atual.id}?utm_source=generator&theme=0`} width="100%" height="380" frameBorder="0" loading="lazy"
-          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" style={{ borderRadius: 12, display: 'block', background: '#121212' }} />
-      </div>
-      <a href={abrir} target="_blank" rel="noreferrer" style={{ ...btnPrimary, display: 'flex', alignItems: 'center', justifyContent: 'center', textDecoration: 'none', boxSizing: 'border-box', textShadow: 'none' }}>Abrir no Spotify</a>
-      <Note>No mini player, quem não está logado no Spotify pelo navegador ouve só trechos. Para a música inteira, toque em “Abrir no Spotify”, ou entre na sua conta pelo próprio player.</Note>
+      <div style={{ ...card, padding: '16px 14px', fontSize: 13, color: MUT, lineHeight: 1.5 }}>A bolinha do Spotify no Início abre esta playlist direto no app do Spotify, com as músicas inteiras.</div>
+      <button onClick={() => abrirNoSpotify(salvo)} style={btnPrimary}>Abrir no Spotify</button>
       {editar ? (<>
         <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://open.spotify.com/playlist/…" style={{ ...input, fontSize: 13 }} />
         {!valido && <Note><span style={{ color: '#F29B4B' }}>Esse link não é do Spotify. No Spotify: playlist › ⋯ › Compartilhar › Copiar link.</span></Note>}

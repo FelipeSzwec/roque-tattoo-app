@@ -3,6 +3,7 @@
 // Pix e pedidos ganham dados reais nas próximas partes.
 import { resumoMes, brl, variacao, MESES } from '../finance.js'
 import { card, W, GR, OR, MUT } from '../ui.jsx'
+import { abrirNoSpotify } from './Musica.jsx'
 import { livresSemana, inicioSemana, proximaSessao, dataCurta, hhmm } from '../agenda.js'
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
@@ -36,12 +37,14 @@ export default function Home({ tx, ir, max, nome, setPeriodo, sessoes = [], exte
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0, animation: 'fi .2s ease' }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 8 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div>
           <div style={{ fontSize: 13, color: '#e6e6ea' }}>{saud}{primeiro ? ', ' + primeiro.charAt(0).toUpperCase() + primeiro.slice(1) : ''}</div>
-          <button onClick={() => ir('musica')} aria-label="Trilha do estúdio" style={{ minHeight: 32, borderRadius: 16, border: '1px solid rgba(255,255,255,.14)', background: 'rgba(10,10,12,.5)', color: W, fontSize: 12, cursor: 'pointer', padding: '0 12px', display: 'flex', alignItems: 'center', gap: 6 }}><span style={{ fontSize: 14 }}>♫</span> Trilha</button>
         </div>
-        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <button onClick={() => abrirNoSpotify(ag?.playlist_url)} aria-label="Abrir a playlist do estúdio no Spotify" style={{ width: 44, height: 44, borderRadius: 22, border: '1px solid rgba(255,255,255,.14)', background: 'rgba(10,10,12,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', padding: 0 }}>
+            <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#e6e6ea" /><path d="M6.5 9.3c3.7-1.1 8-.8 11.2 1M7.2 12.4c3-.9 6.5-.6 9.2.9M7.8 15.3c2.4-.6 5-.4 7.1.8" stroke="#0A0A0C" strokeWidth="1.7" strokeLinecap="round" fill="none" /></svg>
+          </button>
           <div style={{ position: 'relative', width: 44, height: 44, borderRadius: 22, border: '1px solid rgba(255,255,255,.14)', background: 'rgba(10,10,12,.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
             <span style={{ filter: 'grayscale(1) brightness(1.8)' }}>🔔</span>
           </div>
