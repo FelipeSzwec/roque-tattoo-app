@@ -125,7 +125,7 @@ function Fundo({ home, children }) {
       <img src={import.meta.env.BASE_URL + "assets/bg-dj-tattoo.png"} alt="" style={{ position: 'absolute', top: 0, left: '50%', width: '100%', maxWidth: 900, height: 'auto', transform: `translate(-50%, ${home ? '0px' : '-215px'})`, pointerEvents: 'none', WebkitMaskImage: 'linear-gradient(180deg,#000 72%,transparent 100%)', maskImage: 'linear-gradient(180deg,#000 72%,transparent 100%)', transition: 'transform .3s' }} />
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `linear-gradient(180deg,rgba(10,10,12,${home ? 0 : 0.5}) 0%,rgba(10,10,12,${home ? 0.2 : 0.72}) 48%,rgba(10,10,12,${home ? 0.5 : 0.88}) 100%)` }} />
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: 'radial-gradient(rgba(255,255,255,.13) 1px,transparent 1.4px)', backgroundSize: '6px 6px', WebkitMaskImage: 'radial-gradient(75% 40% at 95% 0%,#000,transparent),radial-gradient(60% 30% at 0% 100%,#000,transparent)', maskImage: 'radial-gradient(75% 40% at 95% 0%,#000,transparent),radial-gradient(60% 30% at 0% 100%,#000,transparent)' }} />
-      <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>{children}</div>
+      <div style={{ position: 'relative', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', paddingTop: 'env(safe-area-inset-top)' }}>{children}</div>
     </div>
   )
 }
