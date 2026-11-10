@@ -3,8 +3,8 @@ import { useState } from 'react'
 import * as db from '../data.js'
 import { Screen, Title, Back, Toast, Note, card, input, btnPrimary, btnGhost, MUT } from '../ui.jsx'
 
-// Playlist de exemplo até o estúdio colar a sua.
-export const PLAYLIST_EXEMPLO = 'https://open.spotify.com/playlist/37i9dQZF1DWXRqgorJj26U'
+// Playlist padrão do estúdio (enviada pelo Felipe). Dá para trocar colando outro link.
+export const PLAYLIST_EXEMPLO = 'https://open.spotify.com/playlist/7zZreN0DpXioxvCbNu4Yjz'
 
 // Aceita link do Spotify (open.spotify.com/... ou spotify:playlist:...) e devolve tipo e id.
 export function lerSpotify(url) {
@@ -16,7 +16,7 @@ export function lerSpotify(url) {
 export default function Musica({ ag, recarregar, ir }) {
   const salvo = ag.playlist_url || ''
   const [url, setUrl] = useState(salvo)
-  const [editar, setEditar] = useState(!salvo)
+  const [editar, setEditar] = useState(false)
   const [toast, setToast] = useState(null)
   const atual = lerSpotify(salvo) || lerSpotify(PLAYLIST_EXEMPLO)
   const valido = !url.trim() || lerSpotify(url)
@@ -24,7 +24,7 @@ export default function Musica({ ag, recarregar, ir }) {
 
   const salvar = async () => {
     if (!valido) return
-    try { await db.salvarPlaylist(url); await recarregar(); setEditar(false); setToast({ msg: url.trim() ? 'Playlist do estúdio salva.' : 'Voltou para a playlist de exemplo.' }) } catch (e) { setToast({ msg: e.message, erro: true }) }
+    try { await db.salvarPlaylist(url); await recarregar(); setEditar(false); setToast({ msg: url.trim() ? 'Playlist do estúdio salva.' : 'Voltou para a playlist padrão do estúdio.' }) } catch (e) { setToast({ msg: e.message, erro: true }) }
   }
 
   return (
@@ -32,7 +32,7 @@ export default function Musica({ ag, recarregar, ir }) {
       <Back onClick={() => ir('home')} label="Início" />
       <Title a="Trilha do" b="estúdio" />
       <Toast {...(toast || {})} />
-      {!salvo && <Note>Tocando uma playlist de exemplo. Cole a playlist do estúdio abaixo.</Note>}
+      
       <div style={{ ...card, padding: 8, overflow: 'hidden' }}>
         <iframe key={atual.id} title="Spotify" src={`https://open.spotify.com/embed/${atual.tipo}/${atual.id}?utm_source=generator&theme=0`} width="100%" height="380" frameBorder="0" loading="lazy"
           allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" style={{ borderRadius: 12, display: 'block', background: '#121212' }} />
