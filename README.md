@@ -30,6 +30,7 @@ Sem `.env.local`, o app abre em **modo demonstração** e guarda os dados só no
 
 Cada usuário só vê os próprios lançamentos (Row Level Security).
 
-## Publicar
+## Publicar (GitHub Pages, grátis)
 
-Ainda não definido. A ideia é usar uma opção gratuita (por exemplo, GitHub Pages) quando o app for para o ar.
+Cada push na branch `main` gera o site pelo GitHub Actions (`.github/workflows/pages.yml`).
+Endereço: https://felipeszwec.github.io/roque-tattoo-app/

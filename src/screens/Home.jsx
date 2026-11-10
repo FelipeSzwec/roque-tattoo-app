@@ -16,7 +16,7 @@ export default function Home({ tx, ir, max, nome, setPeriodo }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1, animation: 'fi .2s ease' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 13, color: '#e6e6ea' }}>{saud}{nome ? ', ' + nome.charAt(0).toUpperCase() + nome.slice(1) : ''}</div>
-        <img src="/assets/roque.jpeg" alt="" style={{ width: 44, height: 44, borderRadius: 22, border: '1px solid rgba(255,255,255,.5)', objectFit: 'cover', objectPosition: '50% 22%' }} />
+        <img src={import.meta.env.BASE_URL + "assets/roque.jpeg"} alt="" style={{ width: 44, height: 44, borderRadius: 22, border: '1px solid rgba(255,255,255,.5)', objectFit: 'cover', objectPosition: '50% 22%' }} />
       </div>
       <div style={{ height: 60, flex: 'none' }} />
       <button onClick={() => ir('lancar', { editando: null })} style={{ ...card, display: 'flex', gap: 12, alignItems: 'center', textAlign: 'left', width: '100%', padding: '8px 12px', minHeight: 56, cursor: 'pointer' }}>

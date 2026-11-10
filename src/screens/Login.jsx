@@ -35,7 +35,7 @@ export default function Login({ onEntrou }) {
   return (
     <form onSubmit={enviar} style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1, justifyContent: 'center', animation: 'fi .2s ease', maxWidth: 380, width: '100%', margin: '0 auto', padding: '24px 18px', boxSizing: 'border-box', textShadow: '0 1px 4px rgba(0,0,0,.9)' }}>
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, paddingBottom: 10 }}>
-        <img src="/assets/logo-roque.jpeg" alt="" style={{ width: 92, height: 92, objectFit: 'cover', filter: 'brightness(.75) contrast(1.8)', mixBlendMode: 'screen', borderRadius: '50%', transform: 'scale(1.3)' }} />
+        <img src={import.meta.env.BASE_URL + "assets/logo-roque.jpeg"} alt="" style={{ width: 92, height: 92, objectFit: 'cover', filter: 'brightness(.75) contrast(1.8)', mixBlendMode: 'screen', borderRadius: '50%', transform: 'scale(1.3)' }} />
         <div style={{ fontFamily: "'Playfair Display',serif", fontSize: 30, textAlign: 'center', lineHeight: 1.1 }}>Roque <span style={{ color: '#fff', fontFamily: "'UnifrakturCook',serif", fontWeight: 700 }}>Tattoo Ink</span></div>
         <div style={{ fontSize: 11, letterSpacing: '.14em', color: MUT }}>{modo === 'entrar' ? 'ACESSO DO TATUADOR' : 'CRIAR SUA CONTA'}</div>
       </div>

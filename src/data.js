@@ -52,7 +52,7 @@ export async function criarConta(email, senha, nome) {
 
 export async function esqueciSenha(email) {
   if (!supabase) return
-  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin })
+  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + import.meta.env.BASE_URL })
   if (error) throw new Error(traduzErro(error.message))
 }
 
