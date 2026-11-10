@@ -98,8 +98,8 @@ export default function App() {
 
   return (
     <Fundo home={tela === 'home'}>
-      <div id="scroller" style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '14px 16px 12px', display: 'flex', flexDirection: 'column', textShadow: '0 1px 4px rgba(0,0,0,.9)' }}>
-        <div style={{ maxWidth: 640, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16, flex: '1 0 auto' }}>
+      <div id="scroller" style={{ flex: 1, minHeight: 0, overflowY: tela === 'home' ? 'hidden' : 'auto', padding: '14px 16px 12px', display: 'flex', flexDirection: 'column', textShadow: '0 1px 4px rgba(0,0,0,.9)' }}>
+        <div style={{ maxWidth: 640, width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16, flex: tela === 'home' ? '1 1 0' : '1 0 auto', minHeight: 0 }}>
           {db.modoDemo && <div style={{ fontSize: 10, letterSpacing: '.08em', textTransform: 'uppercase', color: MUT, border: '1px solid rgba(255,255,255,.12)', borderRadius: 10, padding: '3px 9px', alignSelf: 'flex-end' }}>Modo demonstração · dados neste navegador</div>}
           {conteudo}
         </div>

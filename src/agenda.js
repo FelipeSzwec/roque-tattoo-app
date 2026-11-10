@@ -54,12 +54,12 @@ export function blocosDoDia(dia, sessoes, externos, ag, agora = new Date()) {
   return { itens, trabalha, diaTodo }
 }
 
-// Índices (0 = segunda) dos dias da semana que ainda têm uma janela livre de pelo menos 2 horas.
-export function livresSemana(segunda, sessoes, externos, ag, agora = new Date()) {
+// Índices (0 = segunda) dos dias da semana que ainda cabem uma sessão (janela livre de pelo menos 3 horas).
+export function livresSemana(segunda, sessoes, externos, ag, agora = new Date(), minimo = 180) {
   const out = []
   for (let i = 0; i < 7; i++) {
     const { itens } = blocosDoDia(somaDias(segunda, i), sessoes, externos, ag, agora)
-    if (itens.some((b) => b.tipo === 'livre' && b.fim - b.ini >= 120 * 60000)) out.push(i)
+    if (itens.some((b) => b.tipo === 'livre' && b.fim - b.ini >= minimo * 60000)) out.push(i)
   }
   return out
 }

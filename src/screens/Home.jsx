@@ -7,6 +7,11 @@ import { livresSemana, inicioSemana, proximaSessao, dataCurta, hhmm } from '../a
 
 const DIAS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 
+// A luz passa de um dia livre para o outro, como o reflexo de um globo de pista (tons neutros).
+const PASSO = 0.55
+const TONS = ['#ffffff', '#d6dde4', '#e9e3d8', '#b8c4d0']
+const luzes = (n) => `@keyframes vez${n} { 0% { background: ${TONS[0]}; box-shadow: 0 0 10px rgba(255,255,255,.9) } ${(100 / n).toFixed(2)}% { background: ${TONS[1]}; box-shadow: 0 0 6px rgba(214,221,228,.6) } ${Math.min(99, (100 / n) * 1.6).toFixed(2)}%, 100% { background: rgba(255,255,255,.3); box-shadow: none } }`
+
 export default function Home({ tx, ir, max, nome, setPeriodo, sessoes = [], externos = [], ag }) {
   const { ano, mes } = max
   const r = resumoMes(tx, ano, mes)
@@ -18,7 +23,7 @@ export default function Home({ tx, ir, max, nome, setPeriodo, sessoes = [], exte
   const ultimos = Array.from({ length: 12 }, (_, i) => { const d = new Date(ano, mes - 11 + i, 1); return resumoMes(tx, d.getFullYear(), d.getMonth()).receita })
   const maxU = Math.max(1, ...ultimos)
   const hojeIdx = (new Date().getDay() + 6) % 7
-  // Vagas: dias desta semana (de hoje em diante) com pelo menos 2 horas livres na agenda.
+  // Vagas: dias desta semana (de hoje em diante) que ainda cabem uma sessão de 3 horas.
   const agora = new Date()
   const livres = ag ? livresSemana(inicioSemana(agora), sessoes, externos, ag, agora) : []
   const prox = proximaSessao(sessoes, agora)
@@ -30,7 +35,7 @@ export default function Home({ tx, ir, max, nome, setPeriodo, sessoes = [], exte
   const big = { fontSize: 28, fontWeight: 500, marginTop: 2 }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, flex: 1, animation: 'fi .2s ease' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, flex: 1, minHeight: 0, animation: 'fi .2s ease' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ fontSize: 13, color: '#e6e6ea' }}>{saud}{primeiro ? ', ' + primeiro.charAt(0).toUpperCase() + primeiro.slice(1) : ''}</div>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
@@ -40,7 +45,7 @@ export default function Home({ tx, ir, max, nome, setPeriodo, sessoes = [], exte
           <img src={import.meta.env.BASE_URL + 'assets/roque.jpeg'} alt="" style={{ width: 44, height: 44, borderRadius: 22, border: '1px solid rgba(255,255,255,.5)', objectFit: 'cover', objectPosition: '50% 22%' }} />
         </div>
       </div>
-      <div style={{ height: 80, flex: 'none' }} />
+      <div style={{ flex: '1 1 0', maxHeight: 80, minHeight: 6 }} />
 
       <button onClick={() => ir('agenda', { editando: prox ? { diaAgenda: prox.inicio, agendaKey: prox.id } : null })} style={{ ...card, display: 'flex', gap: 12, alignItems: 'center', textAlign: 'left', width: '100%', padding: '8px 12px', minHeight: 56, cursor: 'pointer' }}>
         <div style={{ width: 44, height: 44, borderRadius: 10, flex: 'none', background: 'repeating-linear-gradient(45deg,#232326,#232326 6px,#1a1a1d 6px,#1a1a1d 12px)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '8px monospace', color: '#6b6b70' }}>ref.</div>
@@ -52,7 +57,7 @@ export default function Home({ tx, ir, max, nome, setPeriodo, sessoes = [], exte
         </div>
         <span style={{ color: MUT }}>›</span>
       </button>
-      <div style={{ height: 70, flex: 'none' }} />
+      <div style={{ flex: '1 1 0', maxHeight: 70, minHeight: 6 }} />
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
         <button onClick={() => ir('pedidos')} style={{ ...card, textAlign: 'left', padding: '18px 16px', cursor: 'pointer', minHeight: 44 }}>
@@ -64,10 +69,11 @@ export default function Home({ tx, ir, max, nome, setPeriodo, sessoes = [], exte
         <div onClick={() => ir('agenda')} style={{ ...card, cursor: 'pointer', padding: '18px 16px' }}>
           <div style={lbl}>VAGAS NA SEMANA</div>
           <div style={big}>{livres.length} <span style={{ fontSize: 13, color: MUT, fontWeight: 400 }}>livres</span></div>
+          {livres.length > 0 && <style>{luzes(livres.length)}</style>}
           <div style={{ display: 'flex', gap: 3, marginTop: 6 }}>
             {DIAS.map((d, i) => (
               <div key={d} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-                <span style={{ width: '100%', height: 9, borderRadius: 4, background: livres.includes(i) ? W : 'rgba(255,255,255,.12)', animation: livres.includes(i) ? `disco 2.4s linear -${(i * 0.9).toFixed(1)}s infinite` : 'none' }} />
+                <span style={{ width: '100%', height: 9, borderRadius: 4, background: livres.includes(i) ? 'rgba(255,255,255,.3)' : 'rgba(255,255,255,.12)', animation: livres.includes(i) ? `vez${livres.length} ${(livres.length * PASSO).toFixed(2)}s linear ${(livres.indexOf(i) * PASSO).toFixed(2)}s infinite` : 'none' }} />
                 <span style={{ fontSize: 10, color: livres.includes(i) ? W : '#8a8a90', fontWeight: livres.includes(i) ? 700 : 400 }}>{d}</span>
               </div>
             ))}
@@ -90,8 +96,6 @@ export default function Home({ tx, ir, max, nome, setPeriodo, sessoes = [], exte
         </div>
       </div>
 
-      <div style={{ flex: 1, minHeight: 8 }} />
-      <div style={{ textAlign: 'center', fontFamily: "'Playfair Display',serif", fontStyle: 'italic', fontSize: 14, color: '#e6e6ea', padding: '2px 0 0' }}>Arte no traço, negócio no controle.</div>
     </div>
   )
 }
