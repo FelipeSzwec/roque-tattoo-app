@@ -25,11 +25,11 @@ Sem `.env.local`, o app abre em **modo demonstração** e guarda os dados só no
 ## Banco de dados (Supabase)
 
 1. No painel do Supabase, abra **SQL Editor** e rode o arquivo `supabase/schema.sql`.
-2. Em **Authentication → URL Configuration**, coloque o endereço onde o app ficar no ar (ex.: o domínio da Vercel) em *Site URL*.
+2. Em **Authentication → URL Configuration**, coloque o endereço onde o app ficar no ar  em *Site URL*.
 3. Copie *Project URL* e a chave *anon public* (Project Settings → API) para as variáveis `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`.
 
 Cada usuário só vê os próprios lançamentos (Row Level Security).
 
-## Publicar (Vercel)
+## Publicar
 
-Importe o repositório na Vercel (framework: Vite), adicione as duas variáveis acima em *Environment Variables* e faça o deploy.
+Ainda não definido. A ideia é usar uma opção gratuita (por exemplo, GitHub Pages) quando o app for para o ar.
