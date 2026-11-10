@@ -43,7 +43,7 @@ export async function entrar(email, senha) {
 
 export async function criarConta(email, senha, nome) {
   if (supabase) {
-    const { data, error } = await supabase.auth.signUp({ email, password: senha, options: { data: { nome } } })
+    const { data, error } = await supabase.auth.signUp({ email, password: senha, options: { data: { nome }, emailRedirectTo: window.location.origin + import.meta.env.BASE_URL } })
     if (error) throw new Error(traduzErro(error.message))
     return data.session // null quando precisa confirmar o e-mail
   }
