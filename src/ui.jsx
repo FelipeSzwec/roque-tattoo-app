@@ -34,7 +34,7 @@ export const Sec = ({ children }) => (
 
 export const Note = ({ children }) => <div style={{ fontSize: 12, color: MUT, lineHeight: 1.5 }}>{children}</div>
 
-export const Back = ({ onClick, label = 'Gestão' }) => (
+export const Back = ({ onClick, label = 'Financeiro' }) => (
   <button onClick={onClick} style={{ alignSelf: 'flex-start', minHeight: 44, border: 0, background: 'none', fontSize: 13, cursor: 'pointer', padding: 0, color: MUT }}>‹ {label}</button>
 )
 

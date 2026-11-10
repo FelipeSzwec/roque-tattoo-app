@@ -13,7 +13,7 @@ import Custos from './screens/Custos.jsx'
 import Contas from './screens/Contas.jsx'
 import Onboarding from './screens/Onboarding.jsx'
 
-const TABS = [['Início', 'home', '⌂'], ['Agenda', 'agenda', '▦'], ['Pedidos', 'pedidos', '≣'], ['Clientes', 'clientes', '◉'], ['Mais', 'gestao', '⋯']]
+const TABS = [['Início', 'home', '⌂'], ['Agenda', 'agenda', '▦'], ['Pedidos', 'pedidos', '≣'], ['Clientes', 'clientes', '◉'], ['Financeiro', 'gestao', '$']]
 const TAB_DE = { home: 'home', agenda: 'agenda', pedidos: 'pedidos', clientes: 'clientes' }
 
 export default function App() {

@@ -31,7 +31,7 @@ export function Gestao({ tx, contas, cfg, ir, max, setPeriodo, toast, setToast, 
 
   return (
     <Screen>
-      <Title a="Gestão do" b="estúdio" />
+      <Title a="Gestão" b="financeira" />
       <Note>Números de {MESES_LONGOS[max.mes]} de {max.ano}, calculados a partir dos seus lançamentos.</Note>
       <Toast {...(toast || {})} />
       <button onClick={() => ir('lancar', { editando: null })} style={btnPrimary}>+ Lançar entrada ou saída</button>
